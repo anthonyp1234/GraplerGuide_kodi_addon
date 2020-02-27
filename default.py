@@ -13,8 +13,13 @@ addon_handle    = int(sys.argv[1])
 addon_icon      = addon.getAddonInfo('icon')
 addon_BASE_PATH = xbmc.translatePath(xbmcaddon.Addon().getAddonInfo('profile'))
 
-MENU_DATA = os.path.join("/tmp/","gg_menu_data.txt")
-COOKIE_DATA = os.path.join("/tmp/","gg_cookie_data.txt")
+#MENU_DATA = os.path.join("/tmp/","gg_menu_data.txt")
+#COOKIE_DATA = os.path.join("/tmp/","gg_cookie_data.txt")
+
+
+MENU_DATA = xbmc.translatePath(os.path.join('special://temp','gg_menu_data.txt'))
+COOKIE_DATA = xbmc.translatePath(os.path.join('special://temp','gg_cookie_data.tx'))
+
 
 login_url = "https://grapplersguide.com/amember/login"
 

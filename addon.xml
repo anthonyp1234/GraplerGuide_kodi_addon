@@ -19,10 +19,10 @@
     <website></website>
     <source></source>
     <assets>
-      <icon>resources/icon.png</icon>
-      <fanart>resources/fanart.jpg</fanart>
-      <banner>resources/fanart.jpg</banner>
-      <clearlogo>resources/fanart.jpg</clearlogo>
+      <icon>resources/icon.jpg</icon>
+      <fanart>resources/fanart.png</fanart>
+      <banner>resources/fanart.png</banner>
+      <clearlogo>resources/fanart.png</clearlogo>
       <screenshot></screenshot>
     </assets>
   </extension>
