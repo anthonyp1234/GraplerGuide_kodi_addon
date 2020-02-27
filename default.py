@@ -310,7 +310,7 @@ def build_forum_menu(site_url,title):
         name = my_match.group(1).capitalize()
 
         kodi_item = xbmcgui.ListItem(label=name)
-        kodi_item.setInfo(type='video', infoLabels={'genre': 'BJJ', 'plot': 'BJJ Tutorials'} )
+        #kodi_item.setInfo(type='video', infoLabels={'genre': 'BJJ', 'plot': 'BJJ Tutorials'} )
         
         url = '{0}?action=play&u={1}&t={2}'.format(addon_url, base_url+url_end, quote_plus(name))
         xbmcplugin.addDirectoryItem(addon_handle, url, kodi_item, isFolder=False)
