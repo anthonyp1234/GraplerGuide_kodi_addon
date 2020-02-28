@@ -232,7 +232,7 @@ def build_menu(key0=None,key1=None,key2=None,key3=None):
     
     smaller_dict = return_small_dict(whole_dictionary, key0,key1,key2,key3)
 
-    xbmc.log("Smaller_dict type: {0}".format(str(type(smaller_dict))),level=xbmc.LOGERROR)   
+    #xbmc.log("Smaller_dict type: {0}".format(str(type(smaller_dict))),level=xbmc.LOGERROR)   
     
     for my_item in smaller_dict:
         #xbmc.log("217: key0:{0}, key1:{1}, key2:{2},key3{3} ".format(key0,key1,key2,key3),level=xbmc.LOGERROR)
@@ -246,7 +246,7 @@ def build_menu(key0=None,key1=None,key2=None,key3=None):
 
             url = '{0}?action=forum&u={1}&t={2}'.format(addon_url, smaller_dict[my_item].encode('utf-8'), quote_plus(my_item))
             xbmcplugin.addDirectoryItem(addon_handle, url, kodi_item, isFolder=True)
-            xbmc.log("at last menu",level=xbmc.LOGERROR) 
+            #xbmc.log("at last menu",level=xbmc.LOGERROR) 
 
         else:
             #else if it's a dict, then return the keys it is up to
@@ -277,7 +277,7 @@ def return_key_dict(my_item, key0=None,key1=None,key2=None,key3=None):
 
 def return_small_dict(whole_dictionary, key0=None,key1=None,key2=None,key3=None):
     """Takes in the entire dictionary, returns the sub dictionary based on the keys"""
-    xbmc.log("Key0:{0} Key1:'{1}', Key2:{2}, Key3:{3}".format(key0,key1,key2,key3),level=xbmc.LOGERROR) 
+    #xbmc.log("Key0:{0} Key1:'{1}', Key2:{2}, Key3:{3}".format(key0,key1,key2,key3),level=xbmc.LOGERROR) 
    
     if not key0:
         return whole_dictionary    
@@ -348,11 +348,23 @@ def play_video(r_url, title):
 
     my_encoding = urlencode(encode_string)
 
-    stream = url.rstrip("/") + "|" + my_encoding
+    if "youtube" in url:
+        #xbmc.log("Handle id: {0}".format(int(sys.argv[1])),level=xbmc.LOGERROR) 
+        pattern = 'https://www.youtube.com/\w+/(\w+)\?'
+        video_id = re.match(pattern, url).group(1)
+        youtube_addon_url = "plugin://plugin.video.youtube/play/?video_id=" + video_id
+        kodi_item = xbmcgui.ListItem(label=title,path=youtube_addon_url)
+        kodi_item.setProperty('IsPlayable','True')
+        kodi_item.setProperty('IsFolder','False')
+        #xbmcplugin.endOfDirectory(addon_handle)
+        #xbmcplugin.setResolvedUrl(addon_handle, True, kodi_item)
+        #xbmc.executebuiltin("ActivateWindow(10025,{0},return)".format(youtube_addon_url))
+        xbmc.executebuiltin('RunPlugin("{0}")'.format(youtube_addon_url))
 
-    kodi_item = xbmcgui.ListItem(label=title)
-
-    xbmc.Player().play(stream, kodi_item)
+    else:
+        stream = url.rstrip("/") + "|" + my_encoding
+        kodi_item = xbmcgui.ListItem(label=title)
+        xbmc.Player().play(stream, kodi_item)
 
 
 def get_video_url(r_url):
@@ -369,7 +381,10 @@ def get_video_url(r_url):
     soup3 = BeautifulSoup(my_request3.text.encode('utf-8'),'html.parser' )
     my_find = soup3.find("a", class_="addvidnodedownload")
 
-    return my_find["href"]
+    if my_find:
+        return my_find["href"] ##For normal forum video post with mp4 link
+    else:
+        return soup3.find("iframe")["src"]  ###return the youtube link instead
 
 
 
