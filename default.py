@@ -3,9 +3,9 @@ import os, requests, re, json
 from urllib import urlencode, quote_plus
 from urlparse import parse_qsl
 import pickle
-from http import cookiejar
+#from http import cookiejar Changed to python 2.7 cookiejar
 from bs4 import BeautifulSoup
-
+import cookielib  ##python 2.7 cookiejar
 
 addon           = xbmcaddon.Addon(id='plugin.video.gg')
 addon_url       = sys.argv[0]
@@ -28,8 +28,8 @@ base_url = "https://grapplersguide.com/portal/"
 sections_url = "https://grapplersguide.com/portal/sections/"
 
 ##Global cookieJar
-CJ = cookiejar.CookieJar()
-
+#CJ = cookiejar.CookieJar()
+CJ = cookielib.CookieJar()  ##Changed to python 2.7 Cookiejar
 
 
 sections_dict = {}   # Dictionary for sections 
