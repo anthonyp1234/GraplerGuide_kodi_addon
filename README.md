@@ -35,10 +35,12 @@ Installation (linux style boxes):
     -beautifulsoup
     -beautifulsoup4
 
--Go to each addon and configure and make sure they are enabled.
+-Go to each addon in addon settings make sure they are enabled.
 
 -Restart kodi
--Go to the setting-->addons section look for kodi and enable it.
+
+-Go to the setting-->addons section look for Grapplers Guide plugin and enable it.
+
 -Configure the addon to add your username and password. Make sure this is typed in correctly, my code isn't at a stage where it handles all exceptions.
 
 -The addon should now appear and you should be able to run it. If you add it to your favourites, some skins allow you to put favourites to the menu section of kodi, so you can have it on your homescreen when you start up.
