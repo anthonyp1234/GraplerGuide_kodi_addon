@@ -12,15 +12,21 @@ Usefull if you want to practice in front of the TV and you have kodi home theatr
 Installation (linux style boxes):
 
 -Start terminal program in kodi (can ssh to kodi also)
+
 -Locate addon dir in Kodi, (for ubuntu it's /home/kodi/.kodi/addon/)
+
 -cd to the directory:
     >cd /home/kodi/.kodi/addon
+
 -Create dir named plugin.video.gg
     >mkdir plugin.video.gg
+
 -go into the directory you just made:
     >cd plugin.video.gg
+
 -Download the zip file to the dir:
     >wget https://github.com/anthonyp1234/GraplerGuide_kodi_addon/archive/master.zip
+
 -Unzip the file:
     >unzip GraplerGuide_kodi_addon-master.zip
 
