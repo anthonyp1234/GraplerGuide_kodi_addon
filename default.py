@@ -21,7 +21,9 @@ MENU_DATA = xbmc.translatePath(os.path.join('special://temp','gg_menu_data.txt')
 COOKIE_DATA = xbmc.translatePath(os.path.join('special://temp','gg_cookie_data.tx'))
 
 
-login_url = "https://grapplersguide.com/amember/login"
+#login_url = "https://grapplersguide.com/amember/login"
+login_url = "https://theguidesites.com/membership/login"
+
 
 base_url = "https://grapplersguide.com/portal/"
 
@@ -40,8 +42,26 @@ headers={
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36",
     "sec-fetch-mode":"cors",
     "x-requested-with": "XMLHttpRequest",
+    'accept-encoding': 'identity',
+    "authority": "grapplersguide.com",
     "origin": "https://grapplersguide.com"
     }
+
+headers_section ={
+    "authority":"grapplersguide.com",
+    "method":"GET",
+    "path":"/portal/sections/",
+    "scheme":"https",
+    "accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+    "accept-encoding":"identity", #"br, gzip, deflate",
+    "accept-language":"en-AU,en;q=0.9",
+    "sec-fetch-dest":"document",
+    "sec-fetch-mode":"navigate",
+    "sec-fetch-site":"same-origin",
+    "sec-fetch-user":"?1",
+    "upgrade-insecure-requests":"1",
+    "user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
+}
 
 headers3={'accept': 'text/html',
  'accept-encoding': 'identity',
@@ -76,17 +96,25 @@ def authorize():
     session = requests.session()
     session.headers = headers
     my_request = session.post(login_url, data=credentials)
+   
+    #xbmc.log("My creds {0}".format(str(credentials)),level=xbmc.LOGERROR)
+ 
     global CJ
-    if my_request.status_code == 200:
+    if my_request.status_code == 200 and my_request.json()["ok"]:
+        #xbmc.log("Reponse: {0}".format(str(my_request)),level=xbmc.LOGERROR)
         CJ = my_request.cookies
         pickle_out = open(COOKIE_DATA,"wb")
-        pickle.dump(CJ, pickle_out)
+        pickle.dump(my_request.cookies, pickle_out)
         pickle_out.close()
 
         session.close()
+        
+        #xbmc.log("My creds {0}".format(str(credentials)),level=xbmc.LOGERROR)
+        
         return True
     else:
         #CJ = my_request.cookies
+        xbmcgui.Dialog().ok("Error during login", "Could not login, perhaps wrong user/password")
         xbmc.log("Could not get Auth Token, Session text: {0}\r\nStatus Code: {1}".format(my_request.text.encode('utf-8'), my_request.status_code),level=xbmc.LOGERROR)
         return False
 
@@ -95,16 +123,38 @@ def get_section_data():
     """Get HTML data from the section website. Return this data to use in a function to build the menu items"""
     session = requests.session()
     session.cookies = CJ
-    session.headers = headers
 
-    response = session.get(sections_url, headers=headers)
+    pickle_in = open(COOKIE_DATA,"rb")
+    cookie_data = pickle.load(pickle_in)
+    pickle_in.close()
+
+
+    my_cookie_string = ""
+    for item in cookie_data.iteritems():
+        my_cookie_string = my_cookie_string  +item[0] +"="+item[1]+";"
+
+    my_cookie_string = my_cookie_string.rstrip(";")
+
+    my_headers = headers_section
+    my_headers["cookie"] = my_cookie_string
+    
+
+    session.headers = my_headers
+    
+
+    #xbmc.log("headers is: {0}".format(str(my_headers)),level=xbmc.LOGERROR)
+
+    session.cookies = cookie_data
+
+    response = session.get(sections_url, headers=my_headers, cookies=cookie_data)
 
     #xbmc.log("Cookie_data {0}\r\nResponse Code: {1}".format(str(session.cookies ),response.status_code),level=xbmc.LOGERROR)
 
-    if response.status_code < 400:
+    if response.status_code < 400 :
         return response.text
     else:
-        #xbmc.log("Could not get data, line 80. Response: {0}\r\nText: {1}".format(response.status_code, response.text.encode('utf-8')),level=xbmc.LOGERROR)
+        xbmc.log("Reponse Code: {0}".format(response.status_code),level=xbmc.LOGERROR)
+        #xbmc.log("Could not get data, line 143. Text: {0}".format( str(response.text.encode('utf-8'))),level=xbmc.LOGERROR)
         return None
 
 
