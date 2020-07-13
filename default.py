@@ -103,9 +103,13 @@ def authorize():
     if my_request.status_code == 200 and my_request.json()["ok"]:
         #xbmc.log("Reponse: {0}".format(str(my_request)),level=xbmc.LOGERROR)
         CJ = my_request.cookies
-        pickle_out = open(COOKIE_DATA,"wb")
-        pickle.dump(my_request.cookies, pickle_out)
-        pickle_out.close()
+        #pickle_out = open(COOKIE_DATA,"wb")
+        #pickle.dump(my_request.cookies, pickle_out)
+        #pickle_out.close()
+        
+        ###Removed the above and replaced with methods instead
+        save_cookies(my_request.cookies,COOKIE_DATA)
+
 
         session.close()
         
@@ -119,15 +123,25 @@ def authorize():
         return False
 
 
+def save_cookies(requests_cookiejar, filename):
+    with open(filename, 'wb') as f:
+        pickle.dump(requests_cookiejar, f)
+
+def load_cookies(filename):
+    with open(filename, 'rb') as f:
+        return pickle.load(f)
+
+
 def get_section_data():
     """Get HTML data from the section website. Return this data to use in a function to build the menu items"""
     session = requests.session()
     session.cookies = CJ
 
-    pickle_in = open(COOKIE_DATA,"rb")
-    cookie_data = pickle.load(pickle_in)
-    pickle_in.close()
+    #pickle_in = open(COOKIE_DATA,"rb")
+    #cookie_data = pickle.load(pickle_in)
+    #pickle_in.close()
 
+    cookie_data = load_cookies(COOKIE_DATA)
 
     my_cookie_string = ""
     for item in cookie_data.iteritems():
@@ -158,7 +172,6 @@ def get_section_data():
         return None
 
 
-####UP TO HERE###
 
 def router(paramstring):
     """Router for kodi to select the menu item and route appropriately. """
@@ -276,9 +289,11 @@ def build_menu(key0=None,key1=None,key2=None,key3=None):
 
     
     #xbmc.log("Session text: {0}".format(sections_dict),level=xbmc.LOGERROR)
-    pickle_in = open(MENU_DATA,"rb")
-    whole_dictionary = pickle.load(pickle_in)
- 
+    #pickle_in = open(MENU_DATA,"rb")
+    #whole_dictionary = pickle.load(pickle_in)
+    #pickle_in.close()
+    
+    whole_dictionary = load_cookies(MENU_DATA)
     
     smaller_dict = return_small_dict(whole_dictionary, key0,key1,key2,key3)
 
@@ -355,20 +370,24 @@ def build_forum_menu(site_url,title):
     soup = BeautifulSoup(forum_data, 'html.parser')
 
 
-    forum_list = soup.findAll("a",target="_blank", href=True)    
-   
+    forum_list = soup.findAll("a", class_="",href=True)    
+    
+    #xbmc.log("soup: {0}".format(str(soup).replace("\n\n","\n")),level=xbmc.LOGERROR) 
 
     for item in forum_list:
-        url_end = item["href"]
-        pattern= "threads/([\w|\-|\_]+)"
-        my_match = re.match(pattern,item["href"])
-        name = my_match.group(1).capitalize()
+        try:
+            url_end = item["href"]
+            pattern= "threads/([\w|\-|\_]+)"
+            my_match = re.match(pattern,item["href"])
+            name = my_match.group(1).capitalize()
 
-        kodi_item = xbmcgui.ListItem(label=name)
-        #kodi_item.setInfo(type='video', infoLabels={'genre': 'BJJ', 'plot': 'BJJ Tutorials'} )
-        
-        url = '{0}?action=play&u={1}&t={2}'.format(addon_url, base_url+url_end, quote_plus(name))
-        xbmcplugin.addDirectoryItem(addon_handle, url, kodi_item, isFolder=False)
+            kodi_item = xbmcgui.ListItem(label=name)
+            #kodi_item.setInfo(type='video', infoLabels={'genre': 'BJJ', 'plot': 'BJJ Tutorials'} )
+            
+            url = '{0}?action=play&u={1}&t={2}'.format(addon_url, base_url+url_end, quote_plus(name))
+            xbmcplugin.addDirectoryItem(addon_handle, url, kodi_item, isFolder=True)
+        except:
+            pass
 
     xbmcplugin.endOfDirectory(addon_handle)
 
@@ -376,13 +395,28 @@ def build_forum_menu(site_url,title):
 
 def get_forum_data(site_url):
 
-    pickle_in = open(COOKIE_DATA,"rb")
-    CJ = pickle.load(pickle_in)
+    #pickle_in = open(COOKIE_DATA,"rb")
+    #CJ = pickle.load(pickle_in)
+    #cookie_data = pickle.load(pickle_in)
+    #pickle_in.close()
+    cookie_data = load_cookies(COOKIE_DATA)
+
+    my_cookie_string = ""
+    for item in cookie_data.iteritems():
+        my_cookie_string = my_cookie_string  +item[0] +"="+item[1]+";"
+
+    my_cookie_string = my_cookie_string.rstrip(";")
+
+    my_headers = headers_section
+    my_headers["cookie"] = my_cookie_string
+
 
     session2 = requests.session()
-    session2.headers = headers
+    session2.headers = my_headers
     session2.cookies = CJ
-    my_request2 = session2.get(site_url)
+    my_request2 = session2.get(site_url, headers=my_headers, cookies=cookie_data)
+
+    #xbmc.log("Response: {0}".format(my_request2.text.encode('utf-8')),level=xbmc.LOGERROR)
 
     return my_request2.text.encode('utf-8')
 
@@ -390,51 +424,143 @@ def get_forum_data(site_url):
 
 def play_video(r_url, title):
 
-    url = get_video_url(r_url)
+    get_video_url(r_url)
 
-    encode_string = {}
-    #encode_string = headers
-    encode_string["cookie"] = create_coookie_string(CJ) 
-
-    my_encoding = urlencode(encode_string)
-
-    if "youtube" in url:
-        #xbmc.log("Handle id: {0}".format(int(sys.argv[1])),level=xbmc.LOGERROR) 
-        pattern = 'https://www.youtube.com/\w+/(\w+)\?'
-        video_id = re.match(pattern, url).group(1)
-        youtube_addon_url = "plugin://plugin.video.youtube/play/?video_id=" + video_id
-        kodi_item = xbmcgui.ListItem(label=title,path=youtube_addon_url)
-        kodi_item.setProperty('IsPlayable','True')
-        kodi_item.setProperty('IsFolder','False')
-        #xbmcplugin.endOfDirectory(addon_handle)
-        #xbmcplugin.setResolvedUrl(addon_handle, True, kodi_item)
-        #xbmc.executebuiltin("ActivateWindow(10025,{0},return)".format(youtube_addon_url))
-        xbmc.executebuiltin('RunPlugin("{0}")'.format(youtube_addon_url))
-
-    else:
-        stream = url.rstrip("/") + "|" + my_encoding
-        kodi_item = xbmcgui.ListItem(label=title)
-        xbmc.Player().play(stream, kodi_item)
 
 
 def get_video_url(r_url):
-    pickle_in = open(COOKIE_DATA,"rb")
-    CJ = pickle.load(pickle_in)
 
     session3 = requests.session()
     session3.headers = headers3
     session3.cookies = CJ
-    my_request3 = session3.get(r_url)
 
-    #xbmc.log("Request3: {0}".format(str(my_request3.text).encode('utf-8')),level=xbmc.LOGERROR)
+    cookie_data = load_cookies(COOKIE_DATA)
+    my_cookie_string = ""
+    for item in cookie_data.iteritems():
+        my_cookie_string = my_cookie_string  +item[0] +"="+item[1]+";"
+    my_cookie_string = my_cookie_string.rstrip(";")
+    my_headers = headers_section
+    my_headers["cookie"] = my_cookie_string
+
+
+    my_request3 = session3.get(r_url, headers=my_headers, cookies=cookie_data)
+    
+    #xbmc.log("Code: {0}".format(str(my_request3.status_code)),level=xbmc.LOGERROR)
+    
+    #xbmc.log("Request3: {0}".format(str(my_request3.text.encode('utf-8')).replace("\n\n","\n")),level=xbmc.LOGERROR)
 
     soup3 = BeautifulSoup(my_request3.text.encode('utf-8'),'html.parser' )
-    my_find = soup3.find("a", class_="addvidnodedownload")
+    
+    #xbmc.log("Video find {0}".format(my_find),level=xbmc.LOGERROR)
+    
+    website_for_video = soup3.find("iframe")["src"]
+    
+    #my_headers["cookie"] = "vuid=1148990501.1627776399;"
+    
+    headers_test={
+        "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+        "Accept-Encoding":"gzip",
+        "Accept-Language":"en-US,en;q=0.9",
+        "Connection":"keep-alive",
+        #"Cookie":"vuid=1148990501.1627776399",
+        "DNT":"1",
+        "Host":"player.vimeo.com",
+        "Referer":"https://grapplersguide.com/portal/threads/",
+        "Sec-Fetch-Dest":"iframe",
+        "Sec-Fetch-Mode":"navigate",
+        "Sec-Fetch-Site":"cross-site",
+        "Upgrade-Insecure-Requests":"1",
+        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
+        }
+    
+    
+    
+    my_request4 = session3.get(website_for_video, headers=headers_test, cookies=cookie_data)
+    #xbmc.log("Stream addr is: {0}".format(str(my_request4.text.encode('utf-8'))),level=xbmc.LOGERROR)
+    
+    soup4 = BeautifulSoup(my_request4.text.encode('utf-8'),'html.parser' )
+    
+    text = soup4.findAll("script")[2]
 
-    if my_find:
-        return my_find["href"] ##For normal forum video post with mp4 link
-    else:
-        return soup3.find("iframe")["src"]  ###return the youtube link instead
+    pattern = """var\sconfig\s=\s(\{"c.*m"\})"""
+    my_dict_for_vid = re.findall(pattern,text.text)[0]   ###Up to here gets me the test for the javascript json stuff
+    
+    my_dict_for_vid = json.loads(re.sub("""<iframe.*/iframe>""","",my_dict_for_vid))
+   
+    #xbmc.log("Dict is: \n{0}".format(str(my_dict_for_vid)),level=xbmc.LOGERROR)
+ 
+
+#####Removing HLS stuff for now, going to try progressive download
+    #hls_url = my_dict_for_vid["request"]["files"]["hls"]["cdns"]["akfire_interconnect_quic"]["url"]
+    #v_title = my_dict_for_vid["video"]["title"].title()
+
+    ###Addition from UFC app with HLS ###ANTHONY UP TO HERE, need to fix HLS for some reason. MAybe encoding?
+    #my_encoding = urlencode(headers_test)
+    
+    #playitem = xbmcgui.ListItem(path=hls_url,label=v_title)
+    #playitem.setProperty('inputstream', 'inputstream.adaptive')    
+    
+    #playitem.setMimeType('application/vnd.apple.mpegurl')   ###
+    #playitem.setProperty('inputstream.adaptive.manifest_type', 'hls')  ###was originally hls, trying mpd              
+    #playitem.setContentLookup(False)
+    #playitem.setProperty('isFolder', 'false')
+    #playitem.setProperty('IsPlayable', 'true')
+       ###This is needed for kodi 19>
+      
+    #playitem.setProperty('inputstream.adaptive.stream_headers', my_encoding )  
+
+    
+    #xbmc.log("Stream addr is: {0}".format(str(stream)),level=xbmc.LOGERROR)
+    #xbmc.Player().play(hls_url  ,  playitem)    #### added + "|" + my_encoding
+    
+    #xbmcplugin.setResolvedUrl(addon_handle, True, playitem)
+########
+
+
+    
+#    xbmc.log("Request3: {0}".format(str(my_request4.text.encode('utf-8')).replace("\n\n","\n")),level=xbmc.LOGERROR)
+    
+#    get_download_url(website_for_video)
+####TESTING Progressive Download
+    ##GRab the item with the best resolution
+    biggest_BW_item = {}
+    for item in my_dict_for_vid["request"]["files"]["progressive"]:
+        print(item.keys())
+        
+        if not biggest_BW_item:
+            biggest_BW_item = item
+        else:
+            if item["height"] > biggest_BW_item["height"]:
+                biggest_BW_item = item
+
+    v_title = my_dict_for_vid["video"]["title"].title()
+    playitem = xbmcgui.ListItem(path=biggest_BW_item["url"],label=v_title)
+    my_encoding = urlencode(headers_test)
+    playitem.setContentLookup(False)
+    playitem.setProperty('isFolder', 'false')
+    playitem.setProperty('IsPlayable', 'true')
+           ###This is needed for kodi 19>
+    xbmc.Player().play(biggest_BW_item["url"]  ,  playitem)
+#######    
+    return True
+
+def get_download_url(video_url):
+    session3 = requests.session()
+    cookie_data = load_cookies(COOKIE_DATA)
+    my_cookie_string = ""
+    for item in cookie_data.iteritems():
+        my_cookie_string = my_cookie_string  +item[0] +"="+item[1]+";"
+    my_cookie_string = my_cookie_string.rstrip(";")
+    my_headers = headers_section
+    my_headers["cookie"] = my_cookie_string
+
+
+    my_request3 = session3.get(video_url, headers=my_headers, cookies=cookie_data)
+
+    xbmc.log("Request3: {0}".format(str(my_request3.text.encode('utf-8')).replace("\n\n","\n").replace("\n\n","\n")),level=xbmc.LOGERROR)
+    
+    pass
+
 
 
 
