@@ -372,6 +372,10 @@ def build_forum_menu(site_url,title):
 
     forum_list = soup.findAll("a", class_="",href=True)    
     
+    my_pictures = []
+    for picture in soup.findAll("img",alt="Thread Thumbnail"):
+        my_pictures.append(picture["src"])    
+    
     #xbmc.log("soup: {0}".format(str(soup).replace("\n\n","\n")),level=xbmc.LOGERROR) 
 
     for item in forum_list:
@@ -383,6 +387,13 @@ def build_forum_menu(site_url,title):
 
             kodi_item = xbmcgui.ListItem(label=name)
             #kodi_item.setInfo(type='video', infoLabels={'genre': 'BJJ', 'plot': 'BJJ Tutorials'} )
+            kodi_item_pic = my_pictures.pop(0)
+            kodi_item.setArt({  'thumb': kodi_item_pic, 
+                                'icon' :  kodi_item_pic, 
+                                'landscape': kodi_item_pic, 
+                                'poster' : kodi_item_pic, 
+                                'banner': kodi_item_pic, 
+                                'fanart': kodi_item_pic})
             
             url = '{0}?action=play&u={1}&t={2}'.format(addon_url, base_url+url_end, quote_plus(name))
             xbmcplugin.addDirectoryItem(addon_handle, url, kodi_item, isFolder=True)
